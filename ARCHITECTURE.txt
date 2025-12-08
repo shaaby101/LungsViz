@@ -1,0 +1,292 @@
+```
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                  LUNGS EXPOSURE RISK VISUALIZER - ARCHITECTURE                 ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         🌐 FRONTEND (Browser)                               │
+│                         http://localhost:5000                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                    Single Page Application (SPA)                     │  │
+│  │                      templates/index.html                            │  │
+│  ├──────────────────────────────────────────────────────────────────────┤  │
+│  │                                                                      │  │
+│  │  ┌─────────────────┐              ┌──────────────────────────┐     │  │
+│  │  │  Three.js Scene │              │  User Interactions      │     │  │
+│  │  │  ├─ Left Lung   │              │  ├─ City Selection      │     │  │
+│  │  │  ├─ Right Lung  │              │  ├─ AQI Input           │     │  │
+│  │  │  ├─ Trachea     │              │  ├─ Activity Selection  │     │  │
+│  │  │  └─ Particles   │              │  ├─ Duration Input      │     │  │
+│  │  │  (500 particles)│              │  ├─ Calculate Button    │     │  │
+│  │  │                 │              │  └─ Fetch Live Data     │     │  │
+│  │  │  Color Gradient │              │                         │     │  │
+│  │  │  (Risk Levels)  │              │  Results Display        │     │  │
+│  │  │  ├─ Green       │              │  ├─ Risk Level          │     │  │
+│  │  │  ├─ Orange      │              │  ├─ Health Advice       │     │  │
+│  │  │  ├─ Red         │              │  ├─ Stats Grid          │     │  │
+│  │  │  └─ Dark Red    │              │  ├─ Lung Fill %         │     │  │
+│  │  │                 │              │  └─ Exposure Dose       │     │  │
+│  │  └─────────────────┘              └──────────────────────────┘     │  │
+│  │           ▲                                    ▲                     │  │
+│  │           │                                    │                     │  │
+│  │           └────────────────────┬───────────────┘                     │  │
+│  │                                │                                     │  │
+│  │                    ┌───────────▼────────────┐                        │  │
+│  │                    │  JavaScript Logic      │                        │  │
+│  │                    │  ├─ Event Listeners    │                        │  │
+│  │                    │  ├─ API Calls (fetch)  │                        │  │
+│  │                    │  ├─ DOM Updates        │                        │  │
+│  │                    │  └─ Animation Loop     │                        │  │
+│  │                    └───────────┬────────────┘                        │  │
+│  │                                │                                     │  │
+│  │                    ┌───────────▼────────────┐                        │  │
+│  │                    │  Styling (CSS)         │                        │  │
+│  │                    │  ├─ Dark Mode Design   │                        │  │
+│  │                    │  ├─ Responsive Layout  │                        │  │
+│  │                    │  ├─ Animations        │                        │  │
+│  │                    │  └─ Color Coding      │                        │  │
+│  │                    └────────────────────────┘                        │  │
+│  │                                                                      │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│                              HTTP JSON/REST API                            │
+│                                    ▼                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        🖥️  BACKEND (Flask Server)                            │
+│                       app.py - http://0.0.0.0:5000                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                         Flask Application                            │  │
+│  ├──────────────────────────────────────────────────────────────────────┤  │
+│  │                                                                      │  │
+│  │  Routes (REST Endpoints)                                            │  │
+│  │  ├─ GET /                 → Serve index.html                        │  │
+│  │  ├─ GET /api/cities       → Return city list (10 major cities)     │  │
+│  │  ├─ GET /api/air-quality  → Fetch live AQI data                    │  │
+│  │  ├─ GET /api/activity-types → Return activity options             │  │
+│  │  └─ POST /api/calculate-exposure → Calculate health risk           │  │
+│  │                                                                      │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                  ▲                                         │
+│                                  │                                         │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                      Core Logic & Calculations                       │  │
+│  ├──────────────────────────────────────────────────────────────────────┤  │
+│  │                                                                      │  │
+│  │  1️⃣  AQI ↔ PM2.5 Conversion                                          │  │
+│  │     ├─ Input: AQI (0-500)                                           │  │
+│  │     ├─ Process: EPA breakpoint lookup                               │  │
+│  │     └─ Output: PM2.5 (µg/m³)                                        │  │
+│  │                                                                      │  │
+│  │  2️⃣  Breathing Rate Lookup                                           │  │
+│  │     ├─ Input: Activity type (resting/walking/cycling/running)      │  │
+│  │     ├─ Process: Dictionary lookup                                   │  │
+│  │     └─ Output: Rate (m³/hour)                                       │  │
+│  │                                                                      │  │
+│  │  3️⃣  Exposure Calculation                                            │  │
+│  │     ├─ Formula: PM2.5 × Breathing Rate × Duration                  │  │
+│  │     ├─ Units: (µg/m³) × (m³/h) × (h) = µg                          │  │
+│  │     └─ Output: Total exposure in micrograms                         │  │
+│  │                                                                      │  │
+│  │  4️⃣  Lung Fill Estimation                                            │  │
+│  │     ├─ Formula: (Exposure / 500) × 100                              │  │
+│  │     ├─ Arbitrary scale: 500µg = 100%                                │  │
+│  │     └─ Output: Visual fill percentage                               │  │
+│  │                                                                      │  │
+│  │  5️⃣  Risk Assessment                                                 │  │
+│  │     ├─ Input: AQI value                                             │  │
+│  │     ├─ Process: Binary search through risk levels                   │  │
+│  │     └─ Output: Level, color, advice                                 │  │
+│  │                                                                      │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                  ▲                                         │
+│                                  │                                         │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │              External API Integration & Data                         │  │
+│  ├──────────────────────────────────────────────────────────────────────┤  │
+│  │                                                                      │  │
+│  │  OpenWeatherMap Air Pollution API                                   │  │
+│  │  ├─ Endpoint: /data/2.5/air_pollution                               │  │
+│  │  ├─ Parameters: lat, lon, api_key                                   │  │
+│  │  ├─ Response:                                                        │  │
+│  │  │  ├─ AQI (1-5 scale) - converted to 0-500                        │  │
+│  │  │  ├─ PM2.5 concentration (µg/m³)                                  │  │
+│  │  │  ├─ PM10 (coarse particles)                                      │  │
+│  │  │  ├─ NO₂, SO₂, CO, O₃ (other pollutants)                         │  │
+│  │  │  └─ NH₃ (ammonia)                                                │  │
+│  │  │                                                                   │  │
+│  │  Configuration                                                       │  │
+│  │  ├─ API Key: From .env file (OPENWEATHER_API_KEY)                   │  │
+│  │  ├─ Free Tier: 1000 calls/day                                       │  │
+│  │  ├─ Update Frequency: ~5-10 minutes                                 │  │
+│  │  └─ Coverage: Global (all coordinates)                              │  │
+│  │                                                                      │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ▲
+                                    │
+                    ┌───────────────┴────────────────┐
+                    │                                │
+                    │   Internet / Network           │
+                    │                                │
+                    │                                │
+              ┌─────▼─────┐              ┌──────────▼──────┐
+              │  Browser  │              │  OpenWeatherMap │
+              │ (Client)  │              │   API Server    │
+              └───────────┘              └─────────────────┘
+
+
+═════════════════════════════════════════════════════════════════════════════════
+
+📊 DATA FLOW EXAMPLE:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ User Action: Click "Delhi" city button                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. Frontend: Click event listener triggered                               │
+│     └─> selectCity('Delhi', {lat: 28.6139, lon: 77.2090})                 │
+│                                                                             │
+│  2. Frontend: Make HTTP request                                            │
+│     └─> GET /api/air-quality?lat=28.6139&lon=77.2090                      │
+│                                                                             │
+│  3. Backend: Route handler executed                                        │
+│     └─> fetch_air_quality() function                                       │
+│                                                                             │
+│  4. Backend: Call OpenWeatherMap API                                       │
+│     └─> requests.get("https://api.openweathermap.org/...")                 │
+│                                                                             │
+│  5. External: OpenWeatherMap API responds                                  │
+│     └─> {"list": [{"main": {"aqi": 4}, "components": {"pm2_5": 73.7}}]}   │
+│                                                                             │
+│  6. Backend: Process response                                              │
+│     ├─ Extract AQI level: 4 (Poor)                                        │
+│     ├─ Convert to standard scale: 175                                      │
+│     ├─ Extract PM2.5: 73.7 µg/m³                                          │
+│     └─> Return JSON: {"success": true, "aqi": 175, "pm25": 73.7}          │
+│                                                                             │
+│  7. Frontend: Receive response                                             │
+│     └─> Update form fields with live data                                 │
+│                                                                             │
+│  8. User Action: Click "Calculate Exposure"                                │
+│     └─> POST /api/calculate-exposure                                       │
+│         {aqi: 175, activity: 'walking', duration: 60}                      │
+│                                                                             │
+│  9. Backend: Calculate exposure                                            │
+│     ├─ PM2.5: 73.7 µg/m³                                                  │
+│     ├─ Breathing rate (walking): 1.0 m³/h                                │
+│     ├─ Duration: 1 hour                                                    │
+│     ├─ Exposure = 73.7 × 1.0 × 1 = 73.7 µg                               │
+│     ├─ Lung fill = (73.7 / 500) × 100 = 14.74%                           │
+│     ├─ Risk level: "Very High" (since AQI 175)                            │
+│     └─> Response: {exposure: 73.7, fill: 14.74, risk: "Very High", ...}   │
+│                                                                             │
+│  10. Frontend: Update visualization                                        │
+│      ├─ Update 3D lung fill to 14.74%                                     │
+│      ├─ Change lung color to red                                          │
+│      ├─ Animate particle opacity                                          │
+│      ├─ Display risk indicator and health advice                          │
+│      └─> User sees updated visualization in real-time                     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+═════════════════════════════════════════════════════════════════════════════════
+
+⚙️ TECHNOLOGY STACK:
+
+Backend:
+├─ Framework: Flask 2.3.3 (lightweight Python web framework)
+├─ HTTP: CORS enabled for cross-origin requests
+├─ Environment: python-dotenv for configuration
+└─ API: requests library for external HTTP calls
+
+Frontend:
+├─ Graphics: Three.js (WebGL 3D library)
+├─ Styling: Custom CSS with dark mode
+├─ Communication: Fetch API for REST calls
+└─ Runtime: Vanilla JavaScript (ES6+)
+
+External Services:
+├─ OpenWeatherMap Air Pollution API (real-time data)
+└─ Data Source: Global weather stations network
+
+Deployment:
+├─ Development: Flask built-in server (debug=True)
+├─ Production: Run on gunicorn/waitress
+├─ Port: 5000 (configurable)
+└─ Host: 0.0.0.0 (all interfaces)
+
+
+═════════════════════════════════════════════════════════════════════════════════
+
+📁 PROJECT STRUCTURE:
+
+lungs-visualizer/
+│
+├── app.py (150 lines)
+│   ├── Flask app initialization
+│   ├── Configuration (API keys, breathing rates)
+│   ├── Core functions (AQI conversion, exposure calculation)
+│   ├── 6 REST endpoints
+│   └── Error handling
+│
+├── templates/
+│   └── index.html (800 lines)
+│       ├── HTML structure (header, grid, cards)
+│       ├── CSS styling (dark mode, responsive, animations)
+│       ├── Three.js 3D visualization code
+│       └── JavaScript logic (event handlers, API calls)
+│
+├── requirements.txt (4 packages)
+│   ├── flask
+│   ├── flask-cors
+│   ├── requests
+│   └── python-dotenv
+│
+├── .env (Configuration)
+│   └── OPENWEATHER_API_KEY=your_key_here
+│
+├── run.bat (Windows quick-start)
+├── run.sh (Linux/macOS quick-start)
+│
+├── README.md (Setup & installation guide)
+├── TECHNICAL_DOCS.md (Deep dive into algorithms)
+├── USAGE_GUIDE.md (Examples & troubleshooting)
+└── PROJECT_SUMMARY.md (This file - overview)
+
+
+═════════════════════════════════════════════════════════════════════════════════
+
+🔒 Security Considerations:
+
+✓ API Key Security
+  ├─ Stored in .env (not in code)
+  ├─ Loaded via environment variables
+  └─ Never exposed in frontend
+
+✓ Input Validation
+  ├─ Type checking (integer for AQI, duration)
+  ├─ Range checking (0-500 for AQI, 1-480 for duration)
+  └─ Safe defaults if invalid
+
+✓ Error Handling
+  ├─ Try-except blocks on API calls
+  ├─ Graceful degradation (manual input if API fails)
+  └─ No sensitive data in error messages
+
+✓ Data Privacy
+  ├─ No user data stored
+  ├─ No analytics or tracking
+  ├─ No cookies or local storage
+  └─ Ephemeral session (browser memory only)
+
+
+═════════════════════════════════════════════════════════════════════════════════
+```
