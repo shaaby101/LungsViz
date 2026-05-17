@@ -1,368 +1,1291 @@
-        </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUNGTRACE — Respiratory Exposure Visualizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-        <footer class="footer">
-            <p>Lungs Exposure Risk Visualizer v1.0 | Real-time air quality data from OpenWeatherMap API | Educational Tool</p>
-        </footer>
+    <style>
+        :root {
+            --black: #000000;
+            --white: #FFFFFF;
+            --off-white: #F5F4EF;
+            --green: #00FF85;
+            --yellow: #FFD600;
+            --red: #FF4444;
+            --blue: #5CC8FF;
+            --purple: #C4A8FF;
+            --orange: #FF8C42;
+            --border: 2.5px solid #000000;
+            --shadow: 5px 5px 0px #000000;
+            --shadow-sm: 3px 3px 0px #000000;
+            --font-display: 'Bebas Neue', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+            --font-body: 'DM Sans', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--off-white);
+            font-family: var(--font-body);
+            color: var(--black);
+            min-height: 100vh;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            background: var(--black);
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            border-bottom: var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 32px;
+            color: var(--green);
+            letter-spacing: 3px;
+        }
+
+        .logo span {
+            color: var(--white);
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .badge {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 5px 12px;
+            border: var(--border);
+            background: var(--green);
+            color: var(--black);
+        }
+
+        .badge.outline {
+            background: transparent;
+            color: var(--white);
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        /* ── LAYOUT ── */
+        .app-wrapper {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            background: var(--white);
+            border-right: var(--border);
+            padding: 24px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .sidebar-section-title {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #999;
+            padding: 8px 20px 4px;
+        }
+
+        .sidebar-label {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #666;
+            padding: 16px 20px 8px;
+            border-top: 1px solid #E8E8E8;
+            margin-top: 8px;
+        }
+
+        /* City selector */
+        .city-section {
+            padding: 12px 16px;
+        }
+
+        #cityButtons {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .city-btn {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 9px 14px;
+            background: var(--off-white);
+            border: var(--border);
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.1s ease;
+            box-shadow: var(--shadow-sm);
+            color: var(--black);
+        }
+
+        .city-btn:hover {
+            background: var(--yellow);
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0px #000;
+        }
+
+        .city-btn.active {
+            background: var(--green);
+            transform: translate(2px, 2px);
+            box-shadow: none;
+        }
+
+        /* Input controls */
+        .control-section {
+            padding: 12px 16px;
+        }
+
+        .control-group {
+            margin-bottom: 14px;
+        }
+
+        .control-label {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #555;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .control-input {
+            width: 100%;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 9px 12px;
+            border: var(--border);
+            background: var(--off-white);
+            color: var(--black);
+            outline: none;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.1s;
+        }
+
+        .control-input:focus {
+            background: var(--yellow);
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0px #000;
+        }
+
+        select.control-input {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0l6 8 6-8z' fill='%23000'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            cursor: pointer;
+        }
+
+        .calc-btn {
+            width: 100%;
+            font-family: var(--font-display);
+            font-size: 20px;
+            letter-spacing: 2px;
+            padding: 12px;
+            background: var(--green);
+            border: var(--border);
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.1s;
+            color: var(--black);
+            margin-top: 4px;
+        }
+
+        .calc-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0px #000;
+        }
+
+        .calc-btn:active {
+            transform: translate(3px, 3px);
+            box-shadow: none;
+        }
+
+        .live-btn {
+            width: 100%;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 9px;
+            background: var(--yellow);
+            border: var(--border);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.1s;
+            color: var(--black);
+            margin-top: 8px;
+        }
+
+        .live-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0px #000;
+        }
+
+        /* ── MAIN CONTENT ── */
+        .main-content {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ── CARDS ── */
+        .card {
+            background: var(--white);
+            border: var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .card-header {
+            padding: 12px 18px;
+            border-bottom: var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--black);
+        }
+
+        .card-title {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--white);
+        }
+
+        .card-tag {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 3px 8px;
+            border: 1.5px solid rgba(255,255,255,0.3);
+            color: var(--green);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* ── TOP ROW: AQI + 3D ── */
+        .top-row {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+        }
+
+        /* AQI Panel */
+        .aqi-panel .card-body {
+            padding: 0;
+        }
+
+        .aqi-hero {
+            padding: 24px 20px;
+            text-align: center;
+            border-bottom: var(--border);
+        }
+
+        .aqi-label {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .aqi-number {
+            font-family: var(--font-display);
+            font-size: 96px;
+            line-height: 1;
+            color: var(--black);
+            letter-spacing: -2px;
+        }
+
+        .aqi-status-badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 6px 16px;
+            border: var(--border);
+            box-shadow: var(--shadow-sm);
+            margin-top: 10px;
+            background: var(--yellow);
+        }
+
+        .aqi-status-badge.good { background: var(--green); }
+        .aqi-status-badge.moderate { background: var(--yellow); }
+        .aqi-status-badge.unhealthy { background: var(--orange); }
+        .aqi-status-badge.hazardous { background: var(--red); color: var(--white); }
+
+        .aqi-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .aqi-stat {
+            padding: 14px 18px;
+            border-right: var(--border);
+            border-bottom: var(--border);
+        }
+
+        .aqi-stat:nth-child(even) { border-right: none; }
+        .aqi-stat:nth-child(3), .aqi-stat:nth-child(4) { border-bottom: none; }
+
+        .aqi-stat-label {
+            font-family: var(--font-mono);
+            font-size: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .aqi-stat-value {
+            font-family: var(--font-display);
+            font-size: 28px;
+            line-height: 1;
+            color: var(--black);
+        }
+
+        .aqi-stat-unit {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        /* 3D Visualization */
+        .viz-panel .card-body {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            height: 320px;
+            background: #0f172a;
+            border-bottom: var(--border);
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .fill-overlay {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+        }
+
+        .fill-bar-track {
+            height: 10px;
+            background: rgba(255,255,255,0.15);
+            border: 1.5px solid rgba(255,255,255,0.4);
+            overflow: hidden;
+        }
+
+        #lungFill {
+            height: 100%;
+            background: var(--green);
+            transition: width 0.6s ease, background 0.4s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 4px;
+            font-family: var(--font-mono);
+            font-size: 7px;
+            font-weight: 700;
+            color: var(--black);
+        }
+
+        .fill-label {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 5px;
+        }
+
+        .fill-percent-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(0,0,0,0.7);
+            border: 1.5px solid rgba(255,255,255,0.3);
+            font-family: var(--font-display);
+            font-size: 28px;
+            color: var(--green);
+            padding: 6px 12px;
+            letter-spacing: 1px;
+        }
+
+        /* ── RISK PANEL ── */
+        .risk-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .risk-indicator {
+            border: var(--border);
+        }
+
+        .risk-indicator-header {
+            padding: 10px 16px;
+            border-bottom: var(--border);
+            background: var(--yellow);
+        }
+
+        .risk-indicator-header.good { background: var(--green); }
+        .risk-indicator-header.moderate { background: var(--yellow); }
+        .risk-indicator-header.unhealthy-for-sensitive-groups { background: var(--orange); }
+        .risk-indicator-header.unhealthy,
+        .risk-indicator-header.very-unhealthy,
+        .risk-indicator-header.hazardous { background: var(--red); color: var(--white); }
+
+        .risk-level-text {
+            font-family: var(--font-display);
+            font-size: 22px;
+            letter-spacing: 1px;
+        }
+
+        .risk-body {
+            padding: 16px;
+        }
+
+        .risk-advice {
+            font-family: var(--font-body);
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        /* Stat cards */
+        .stat-card .card-body {
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-number {
+            font-family: var(--font-display);
+            font-size: 42px;
+            line-height: 1;
+            letter-spacing: -1px;
+        }
+
+        .stat-unit {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-desc {
+            font-family: var(--font-body);
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* ── HEALTH INSIGHT ── */
+        .insight-panel .card-body {
+            padding: 0;
+        }
+
+        .insight-text {
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.6;
+            color: #222;
+            padding: 20px;
+            border-bottom: var(--border);
+        }
+
+        .insight-accent-bar {
+            height: 6px;
+            background: repeating-linear-gradient(
+                90deg,
+                var(--green) 0px,
+                var(--green) 20px,
+                var(--black) 20px,
+                var(--black) 22px
+            );
+        }
+
+        /* ── LOADING ── */
+        #loading {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #loading.visible {
+            display: flex;
+        }
+
+        .loading-box {
+            background: var(--yellow);
+            border: var(--border);
+            box-shadow: 8px 8px 0px #000;
+            padding: 32px 48px;
+            text-align: center;
+        }
+
+        .loading-title {
+            font-family: var(--font-display);
+            font-size: 32px;
+            letter-spacing: 3px;
+            color: var(--black);
+        }
+
+        .loading-sub {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #555;
+            margin-top: 8px;
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        .loading-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--black);
+            border: 1.5px solid var(--black);
+            animation: dotPulse 0.8s ease-in-out infinite;
+        }
+
+        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotPulse {
+            0%, 100% { transform: scale(1); background: var(--black); }
+            50% { transform: scale(0.5); background: transparent; }
+        }
+
+        /* ── DECORATIVE ── */
+        .cross {
+            display: inline-block;
+            font-size: 16px;
+            color: #ccc;
+            user-select: none;
+        }
+
+        .dot-grid {
+            background-image: radial-gradient(circle, #00000015 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* ── RESULTS SECTION ── */
+        #results {
+            display: none;
+        }
+
+        #results.visible {
+            display: block;
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+            background: var(--black);
+            padding: 14px 32px;
+            border-top: var(--border);
+            font-family: var(--font-mono);
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
+        /* ── TICKER ── */
+        .ticker {
+            background: var(--green);
+            border-top: var(--border);
+            border-bottom: var(--border);
+            padding: 8px 0;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .ticker-inner {
+            display: inline-block;
+            animation: ticker 20s linear infinite;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--black);
+        }
+
+        @keyframes ticker {
+            0% { transform: translateX(100vw); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* ── SECTION DIVIDER ── */
+        .section-title-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-size: 13px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .section-line {
+            flex: 1;
+            height: 2px;
+            background: var(--black);
+        }
+
+        /* ── RESPONSIVE ADJUSTMENTS ── */
+        @media (max-width: 900px) {
+            .app-wrapper { grid-template-columns: 1fr; }
+            .top-row { grid-template-columns: 1fr; }
+            .risk-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="logo">LUNG<span>TRACE</span></div>
+        <div class="header-badges">
+            <span class="badge">● LIVE</span>
+            <span class="badge outline">V1.0</span>
+            <span class="badge outline">OpenWeather API</span>
+        </div>
+    </header>
+
+    <!-- TICKER -->
+    <div class="ticker">
+        <span class="ticker-inner">
+            ✛ REAL-TIME AIR QUALITY MONITORING &nbsp;&nbsp;&nbsp; ✛ RESPIRATORY EXPOSURE CALCULATOR &nbsp;&nbsp;&nbsp; ✛ PM2.5 PARTICLE TRACKING &nbsp;&nbsp;&nbsp; ✛ HEALTH RISK ASSESSMENT &nbsp;&nbsp;&nbsp; ✛ 3D LUNG VISUALIZATION &nbsp;&nbsp;&nbsp; ✛ CITY COMPARISON &nbsp;&nbsp;&nbsp;
+        </span>
     </div>
 
+    <!-- LOADING -->
+    <div id="loading">
+        <div class="loading-box">
+            <div class="loading-title">FETCHING DATA</div>
+            <div class="loading-sub">Pulling live air quality metrics</div>
+            <div class="loading-dots">
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP LAYOUT -->
+    <div class="app-wrapper">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-section-title">◆ Select City</div>
+            <div class="city-section">
+                <div id="cityButtons"></div>
+            </div>
+
+            <div class="sidebar-label">◆ Parameters</div>
+            <div class="control-section">
+                <div class="control-group">
+                    <label class="control-label" for="aqi">AQI Value</label>
+                    <input class="control-input" type="number" id="aqi" value="100" min="0" max="500" placeholder="0–500">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label" for="pm25">PM2.5 (µg/m³)</label>
+                    <input class="control-input" type="number" id="pm25" value="35" min="0" max="500" step="0.1" placeholder="µg/m³">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label" for="activity">Activity Type</label>
+                    <select class="control-input" id="activity">
+                        <option value="resting">Resting</option>
+                        <option value="walking">Walking</option>
+                        <option value="running">Running</option>
+                        <option value="cycling">Cycling</option>
+                        <option value="exercise">Exercise</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label" for="duration">Duration (mins)</label>
+                    <input class="control-input" type="number" id="duration" value="60" min="1" max="480" placeholder="Minutes">
+                </div>
+
+                <button class="calc-btn" onclick="calculateExposure()">CALCULATE</button>
+                <button class="live-btn" onclick="fetchLiveData()">⬤ USE MY LOCATION</button>
+
+                <div class="sidebar-label" style="border:none; padding:16px 0 8px; margin-top:8px;">◆ Quick Scenarios</div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button class="city-btn" style="flex:1; text-align:center; padding:6px 0; font-size:10px;" onclick="setScenario('walking', 30)">🚶 WALK (30m)</button>
+                    <button class="city-btn" style="flex:1; text-align:center; padding:6px 0; font-size:10px;" onclick="setScenario('cycling', 45)">🚴 CYCLE (45m)</button>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                    <button class="city-btn" style="flex:1; text-align:center; padding:6px 0; font-size:10px;" onclick="setScenario('exercise', 60)">🏋️ GYM (60m)</button>
+                    <button class="city-btn" style="flex:1; text-align:center; padding:6px 0; font-size:10px;" onclick="setScenario('resting', 120)">🚗 CAR (2h)</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main-content dot-grid">
+
+            <!-- TOP ROW -->
+            <div class="top-row">
+
+                <!-- AQI CARD -->
+                <div class="card aqi-panel">
+                    <div class="card-header">
+                        <span class="card-title">Air Quality Index</span>
+                        <span class="card-tag">REAL-TIME</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="aqi-hero">
+                            <div class="aqi-label">Current AQI</div>
+                            <div class="aqi-number" id="displayAqi">—</div>
+                            <div class="aqi-status-badge moderate" id="aqiBadge">MODERATE</div>
+                        </div>
+                        <div class="aqi-stats">
+                            <div class="aqi-stat">
+                                <div class="aqi-stat-label">PM2.5</div>
+                                <div class="aqi-stat-value" id="displayPm25">—</div>
+                                <div class="aqi-stat-unit">µg/m³</div>
+                            </div>
+                            <div class="aqi-stat">
+                                <div class="aqi-stat-label">Fill Level</div>
+                                <div class="aqi-stat-value"><span id="fillPercent">0</span><span style="font-size:16px">%</span></div>
+                                <div class="aqi-stat-unit">Lung Load</div>
+                            </div>
+                            <div class="aqi-stat">
+                                <div class="aqi-stat-label">Activity</div>
+                                <div class="aqi-stat-value" id="displayActivity" style="font-size:18px;padding-top:4px">—</div>
+                                <div class="aqi-stat-unit">Mode</div>
+                            </div>
+                            <div class="aqi-stat">
+                                <div class="aqi-stat-label">Duration</div>
+                                <div class="aqi-stat-value" id="displayDuration">—</div>
+                                <div class="aqi-stat-unit">Minutes</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3D VIZ CARD -->
+                <div class="card viz-panel">
+                    <div class="card-header">
+                        <span class="card-title">3D Lung Visualization</span>
+                        <span class="card-tag">INTERACTIVE</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="canvas-wrapper">
+                            <canvas id="canvas"></canvas>
+                            <div class="fill-percent-badge" id="fillPercent3D">0%</div>
+                            <div class="fill-overlay">
+                                <div class="fill-label">Pollutant Fill Level</div>
+                                <div class="fill-bar-track">
+                                    <div id="lungFill" style="width:0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RESULTS SECTION -->
+            <div id="results">
+                <div class="section-title-row">
+                    <span class="section-title">Exposure Analysis</span>
+                    <div class="section-line"></div>
+                    <span style="font-family:var(--font-mono);font-size:9px;color:#999;text-transform:uppercase;letter-spacing:1px">Updated Now</span>
+                </div>
+
+                <!-- RISK + STATS ROW -->
+                <div class="risk-row">
+
+                    <!-- Risk indicator -->
+                    <div class="risk-indicator card">
+                        <div class="card-header">
+                            <span class="card-title">Risk Level</span>
+                        </div>
+                        <div id="riskIndicator" class="risk-indicator-header moderate">
+                            <div class="risk-level-text" id="riskLevel">MODERATE</div>
+                        </div>
+                        <div class="risk-body">
+                            <p class="risk-advice" id="riskAdvice">Calculate exposure to see health recommendations.</p>
+                        </div>
+                    </div>
+
+                    <!-- Stat: Exposure -->
+                    <div class="card stat-card">
+                        <div class="card-header">
+                            <span class="card-title">Total Exposure</span>
+                            <span class="card-tag" style="background:var(--red);color:var(--white);border-color:rgba(255,255,255,0.2)">µg</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="stat-number" id="resultExposure">—</div>
+                            <div class="stat-unit">Micrograms inhaled</div>
+                            <div class="stat-desc">Total PM2.5 particulate matter absorbed during session</div>
+                        </div>
+                    </div>
+
+                    <!-- Stat: Breath Rate -->
+                    <div class="card stat-card">
+                        <div class="card-header">
+                            <span class="card-title">Breathing Rate</span>
+                            <span class="card-tag" style="background:var(--blue);border-color:rgba(255,255,255,0.2)">m³/h</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="stat-number" id="resultBreathRate">—</div>
+                            <div class="stat-unit">Cubic metres / hour</div>
+                            <div class="stat-desc">Respiratory volume at selected activity intensity</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HEALTH INSIGHT -->
+                <div class="card insight-panel" style="margin-top:0">
+                    <div class="card-header">
+                        <span class="card-title">Health Insight</span>
+                        <span class="card-tag">AI ANALYSIS</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="insight-accent-bar"></div>
+                        <p class="insight-text" id="healthInsight">Run a calculation to see your personalized health insight.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EMPTY STATE (before calculation) -->
+            <div id="emptyState" style="text-align:center; padding:48px; border:var(--border); background:var(--white); box-shadow:var(--shadow);">
+                <div style="font-family:var(--font-display);font-size:48px;color:#ddd;letter-spacing:3px;">SELECT CITY</div>
+                <div style="font-family:var(--font-mono);font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:2px;margin-top:8px;">or enter parameters and hit Calculate</div>
+                <div style="margin-top:24px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+                    <div style="font-family:var(--font-mono);font-size:9px;color:#bbb;text-transform:uppercase;letter-spacing:1px;padding:8px 16px;border:1.5px dashed #ccc;">✛ Real-time AQI data</div>
+                    <div style="font-family:var(--font-mono);font-size:9px;color:#bbb;text-transform:uppercase;letter-spacing:1px;padding:8px 16px;border:1.5px dashed #ccc;">✛ 3D lung visualization</div>
+                    <div style="font-family:var(--font-mono);font-size:9px;color:#bbb;text-transform:uppercase;letter-spacing:1px;padding:8px 16px;border:1.5px dashed #ccc;">✛ PM2.5 exposure</div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-dot"></div>
+        Lungs Exposure Risk Visualizer v1.0 &nbsp;|&nbsp; Real-time air quality data from OpenWeatherMap API &nbsp;|&nbsp; Educational Tool
+    </footer>
+
     <script>
-        // Three.js 3D Lung Visualization
-        let scene, camera, renderer, pollutantParticles, lungsModel, lungsHelper;
+        // ── THREE.JS 3D LUNG VISUALIZATION ──
+        let scene, camera, renderer, pollutantParticles, lungsModel, lungsHelper, controls;
         let currentFillLevel = 0;
 
         function normalizeLungsModel(model) {
             const box = new THREE.Box3().setFromObject(model);
             const size = box.getSize(new THREE.Vector3());
             const center = box.getCenter(new THREE.Vector3());
-
             model.position.sub(center);
-
             const maxDim = Math.max(size.x, size.y, size.z) || 1;
-            const desiredSize = 2.5;
-            const scale = desiredSize / maxDim;
-            model.scale.multiplyScalar(scale);
-
+            model.scale.multiplyScalar(2.5 / maxDim);
             model.rotation.x = Math.PI / 12;
-
-            model.traverse((child) => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                }
+            model.traverse(child => {
+                if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; }
             });
         }
 
         function initThreeJS() {
-            // Scene setup
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0f172a);
 
-            // Camera setup
             const canvas = document.getElementById('canvas');
             camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
             camera.position.z = 3;
 
-            // Renderer setup
-            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
             renderer.setSize(canvas.clientWidth, canvas.clientHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
 
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+            dir.position.set(5, 5, 5);
+            scene.add(dir);
 
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(5, 5, 5);
-            scene.add(directionalLight);
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.autoRotate = false; // Let the model rotation below handle auto-rotation or let controls handle it
+            controls.enableZoom = true;
 
-            // Create pollutant particles
             createPollutantParticles();
-
-            // Load external lungs model
             loadLungsModel();
-
-            // Animation loop
             animate();
-
-            // Handle window resize
             window.addEventListener('resize', onWindowResize);
         }
 
         function loadLungsModel() {
             const loader = new THREE.GLTFLoader();
-            loader.load(
-                '/static/models/lungs.glb',
-                (gltf) => {
+            loader.load('/static/models/lungs.glb',
+                gltf => {
                     const model = gltf.scene;
                     normalizeLungsModel(model);
                     lungsModel = model;
                     scene.add(lungsModel);
-                    lungsHelper = new THREE.BoxHelper(lungsModel, 0xff0000);
+                    lungsHelper = new THREE.BoxHelper(lungsModel, 0x00FF85);
                     scene.add(lungsHelper);
-                    console.log('Model loaded successfully');
-                    // Apply latest fill color to loaded model
                     updateLungFill(currentFillLevel);
                 },
                 undefined,
                 (error) => {
-                    console.error('Model failed to load:', error);
-                    // Graceful fallback so user still sees lungs
+                    console.log("Could not load GLTF model, falling back to procedural lungs...", error);
                     createProceduralLungs();
                 }
             );
         }
 
         function createProceduralLungs() {
-            const lungMaterial = new THREE.MeshPhongMaterial({
-                color: 0x06b6d4,
-                emissive: 0x062e3a,
-                shininess: 100
+            lungsModel = new THREE.Group();
+
+            // 1. Create a fleshy, slightly shiny material for the lungs
+            const lungMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xff9999, // Fleshy pinkish-red
+                emissive: 0x220000, 
+                shininess: 30,
+                flatShading: true // Gives it a nice, modern stylized look
             });
 
-            const leftGeometry = new THREE.LatheGeometry(
-                [
-                    new THREE.Vector2(0, 0),
-                    new THREE.Vector2(0.8, 0.2),
-                    new THREE.Vector2(0.9, 0.8),
-                    new THREE.Vector2(0.7, 1.5),
-                    new THREE.Vector2(0.3, 1.8),
-                    new THREE.Vector2(0.1, 1.5),
-                    new THREE.Vector2(0, 0.8)
-                ],
-                32
-            );
+            // 2. The Right Lung (Slightly larger)
+            // We start with a standard "globe" (SphereGeometry)
+            const rightGeo = new THREE.SphereGeometry(1, 32, 32);
+            const rightLung = new THREE.Mesh(rightGeo, lungMaterial.clone());
+            rightLung.position.set(1.1, 0, 0);
+            // Stretch it vertically, compress it slightly on the X axis
+            rightLung.scale.set(0.8, 1.6, 0.9); 
 
-            const rightGeometry = new THREE.LatheGeometry(
-                [
-                    new THREE.Vector2(0, 0),
-                    new THREE.Vector2(0.95, 0.2),
-                    new THREE.Vector2(1.0, 0.8),
-                    new THREE.Vector2(0.8, 1.5),
-                    new THREE.Vector2(0.35, 1.8),
-                    new THREE.Vector2(0.1, 1.5),
-                    new THREE.Vector2(0, 0.8)
-                ],
-                32
-            );
+            // 3. The Left Lung (Slightly smaller to accommodate the heart)
+            const leftGeo = new THREE.SphereGeometry(1, 32, 32);
+            const leftLung = new THREE.Mesh(leftGeo, lungMaterial.clone());
+            leftLung.position.set(-1.1, 0, 0);
+            // Make the scale slightly smaller than the right lung
+            leftLung.scale.set(0.7, 1.5, 0.85); 
 
-            lungsModel = new THREE.Group();
-            const leftLung = new THREE.Mesh(leftGeometry, lungMaterial.clone());
-            leftLung.position.x = -1.2;
-            leftLung.scale.set(0.7, 1, 0.7);
+            // 4. The Trachea (Windpipe)
+            const tracheaGeo = new THREE.CylinderGeometry(0.25, 0.25, 1.5, 16);
+            const tracheaMat = new THREE.MeshPhongMaterial({ color: 0xcccccc });
+            const trachea = new THREE.Mesh(tracheaGeo, tracheaMat);
+            trachea.position.set(0, 1.8, 0);
 
-            const rightLung = new THREE.Mesh(rightGeometry, lungMaterial.clone());
-            rightLung.position.x = 1.2;
-            rightLung.scale.set(0.8, 1, 0.8);
-
-            const tracheaGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.8, 16);
-            const tracheaMaterial = new THREE.MeshPhongMaterial({ color: 0x10b981 });
-            const trachea = new THREE.Mesh(tracheaGeometry, tracheaMaterial);
-            trachea.position.y = 1.2;
-
+            // 5. Group them together
             lungsModel.add(leftLung, rightLung, trachea);
+            
+            // Adjust overall position and scale to fit your canvas
+            lungsModel.position.y = -0.5;
+            lungsModel.scale.set(0.8, 0.8, 0.8);
+            
             scene.add(lungsModel);
+            
+            // Apply the initial pollutant fill level
+            updateLungFill(currentFillLevel);
         }
 
         function createPollutantParticles() {
-            const particleGeometry = new THREE.BufferGeometry();
-            const particleCount = 500;
-
-            const positions = new Float32Array(particleCount * 3);
-            const velocities = new Float32Array(particleCount * 3);
-
-            for (let i = 0; i < particleCount; i++) {
-                positions[i * 3] = (Math.random() - 0.5) * 4;
-                positions[i * 3 + 1] = (Math.random() - 0.5) * 4;
-                positions[i * 3 + 2] = (Math.random() - 0.5) * 4;
-
-                velocities[i * 3] = (Math.random() - 0.5) * 0.02;
-                velocities[i * 3 + 1] = (Math.random() - 0.5) * 0.02;
-                velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.02;
+            const geo = new THREE.BufferGeometry();
+            const count = 500;
+            const positions = new Float32Array(count * 3);
+            const velocities = new Float32Array(count * 3);
+            for (let i = 0; i < count; i++) {
+                positions[i*3]   = (Math.random()-0.5)*4;
+                positions[i*3+1] = (Math.random()-0.5)*4;
+                positions[i*3+2] = (Math.random()-0.5)*4;
+                velocities[i*3]   = (Math.random()-0.5)*0.02;
+                velocities[i*3+1] = (Math.random()-0.5)*0.02;
+                velocities[i*3+2] = (Math.random()-0.5)*0.02;
             }
-
-            particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            particleGeometry.userData.velocity = velocities;
-
-            const particleMaterial = new THREE.PointsMaterial({
-                color: 0xef4444,
-                size: 0.05,
-                transparent: true,
-                opacity: 0.6,
-                sizeAttenuation: true
-            });
-
-            pollutantParticles = new THREE.Points(particleGeometry, particleMaterial);
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geo.userData.velocity = velocities;
+            pollutantParticles = new THREE.Points(geo, new THREE.PointsMaterial({
+                color: 0xef4444, size: 0.05, transparent: true, opacity: 0.6, sizeAttenuation: true
+            }));
             scene.add(pollutantParticles);
         }
 
         function updateLungFill(fillLevel) {
             currentFillLevel = fillLevel;
             if (lungsModel) {
-                let colorHex = 0x10b981;
-                if (fillLevel >= 75) {
-                    colorHex = 0x991b1b;
-                } else if (fillLevel >= 50) {
-                    colorHex = 0xef4444;
-                } else if (fillLevel >= 25) {
-                    colorHex = 0xf59e0b;
-                }
-                lungsModel.traverse((child) => {
-                    if (child.isMesh && child.material && child.material.color) {
-                        child.material.color.setHex(colorHex);
-                    }
+                let color = 0x10b981;
+                if (fillLevel >= 75) color = 0x991b1b;
+                else if (fillLevel >= 50) color = 0xef4444;
+                else if (fillLevel >= 25) color = 0xf59e0b;
+                lungsModel.traverse(child => {
+                    if (child.isMesh && child.material?.color) child.material.color.setHex(color);
                 });
             }
-
-            // Update particle opacity based on fill
             pollutantParticles.material.opacity = 0.2 + (fillLevel / 100) * 0.6;
 
-            // Update UI
-            document.getElementById('fillPercent').textContent = Math.round(fillLevel) + '%';
+            const pct = Math.round(fillLevel);
+            document.getElementById('fillPercent').textContent = pct + '%';
+            document.getElementById('fillPercent3D').textContent = pct + '%';
             const lungFill = document.getElementById('lungFill');
             lungFill.style.width = fillLevel + '%';
-            lungFill.textContent = fillLevel > 5 ? Math.round(fillLevel) + '%' : '';
+            lungFill.textContent = fillLevel > 8 ? pct + '%' : '';
         }
 
         function animate() {
             requestAnimationFrame(animate);
-
-            // Rotate lungs
+            if (controls) controls.update();
             if (lungsModel) {
                 lungsModel.rotation.y += 0.003;
-                if (lungsHelper) {
-                    lungsHelper.update();
-                }
+                if (lungsHelper) lungsHelper.update();
             }
-
-            // Update particles
-            const positions = pollutantParticles.geometry.attributes.position.array;
-            const velocities = pollutantParticles.geometry.userData.velocity;
-
-            for (let i = 0; i < positions.length; i += 3) {
-                positions[i] += velocities[i];
-                positions[i + 1] += velocities[i + 1];
-                positions[i + 2] += velocities[i + 2];
-
-                // Bounce particles
-                if (Math.abs(positions[i]) > 2) velocities[i] *= -1;
-                if (Math.abs(positions[i + 1]) > 2) velocities[i + 1] *= -1;
-                if (Math.abs(positions[i + 2]) > 2) velocities[i + 2] *= -1;
+            const pos = pollutantParticles.geometry.attributes.position.array;
+            const vel = pollutantParticles.geometry.userData.velocity;
+            for (let i = 0; i < pos.length; i += 3) {
+                pos[i] += vel[i]; pos[i+1] += vel[i+1]; pos[i+2] += vel[i+2];
+                if (Math.abs(pos[i])   > 2) vel[i]   *= -1;
+                if (Math.abs(pos[i+1]) > 2) vel[i+1] *= -1;
+                if (Math.abs(pos[i+2]) > 2) vel[i+2] *= -1;
             }
-
             pollutantParticles.geometry.attributes.position.needsUpdate = true;
-
             renderer.render(scene, camera);
         }
 
         function onWindowResize() {
             const canvas = document.getElementById('canvas');
-            const width = canvas.clientWidth;
-            const height = canvas.clientHeight;
-
-            camera.aspect = width / height;
+            camera.aspect = canvas.clientWidth / canvas.clientHeight;
             camera.updateProjectionMatrix();
-            renderer.setSize(width, height);
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
         }
 
-        // Application logic
+        // ── AQI BADGE LOGIC ──
+        function updateAqiBadge(aqi) {
+            const badge = document.getElementById('aqiBadge');
+            badge.className = 'aqi-status-badge';
+            if (aqi <= 50)       { badge.textContent = 'GOOD';       badge.classList.add('good'); }
+            else if (aqi <= 100) { badge.textContent = 'MODERATE';   badge.classList.add('moderate'); }
+            else if (aqi <= 150) { badge.textContent = 'UNHEALTHY (SENSITIVE)'; badge.classList.add('unhealthy'); }
+            else if (aqi <= 200) { badge.textContent = 'UNHEALTHY';  badge.classList.add('unhealthy'); }
+            else if (aqi <= 300) { badge.textContent = 'VERY UNHEALTHY'; badge.classList.add('hazardous'); }
+            else                 { badge.textContent = 'HAZARDOUS';  badge.classList.add('hazardous'); }
+        }
+
+        // ── API CALLS ──
         async function fetchCities() {
             try {
-                const response = await fetch('/api/cities');
-                const cities = await response.json();
-                const cityButtons = document.getElementById('cityButtons');
-                
+                const cities = await fetch('/api/cities').then(r => r.json());
+                const container = document.getElementById('cityButtons');
                 cities.forEach(city => {
                     const btn = document.createElement('button');
                     btn.textContent = city.name;
                     btn.className = 'city-btn';
                     btn.onclick = () => selectCity(city, btn);
-                    cityButtons.appendChild(btn);
+                    container.appendChild(btn);
                 });
-            } catch (error) {
-                console.error('Error fetching cities:', error);
-            }
+            } catch (e) { console.error('Error fetching cities:', e); }
         }
 
         function selectCity(city, btnElement) {
-            // Update active state
-            document.querySelectorAll('.city-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.city-btn').forEach(b => b.classList.remove('active'));
             btnElement.classList.add('active');
-            
-            // Fetch data for this city
             fetchLiveDataForCity(city.lat, city.lon);
         }
 
-        async function fetchLiveDataForCity(lat, lon) {
-            document.getElementById('loading').style.display = 'block';
-            try {
-                const response = await fetch(`/api/air-quality?lat=${lat}&lon=${lon}`);
-                const data = await response.json();
+        function setScenario(activity, mins) {
+            document.getElementById('activity').value = activity;
+            document.getElementById('duration').value = mins;
+            calculateExposure();
+        }
 
+        async function fetchLiveDataForCity(lat, lon) {
+            document.getElementById('loading').classList.add('visible');
+            try {
+                const data = await fetch(`/api/air-quality?lat=${lat}&lon=${lon}`).then(r => r.json());
                 if (data.success) {
                     document.getElementById('aqi').value = Math.round(data.aqi);
                     document.getElementById('pm25').value = Math.round(data.pm25 * 100) / 100;
-                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('loading').classList.remove('visible');
                     calculateExposure();
                 } else {
-                    alert('Error fetching air quality data. Using default values.');
-                    document.getElementById('loading').style.display = 'none';
+                    alert('Error fetching air quality data.');
+                    document.getElementById('loading').classList.remove('visible');
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Failed to fetch real-time data. Using default values.');
-                document.getElementById('loading').style.display = 'none';
+            } catch (e) {
+                alert('Failed to fetch real-time data.');
+                document.getElementById('loading').classList.remove('visible');
             }
         }
 
         async function fetchLiveData() {
-            // Use geolocation or default to Delhi
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        fetchLiveDataForCity(position.coords.latitude, position.coords.longitude);
-                    },
-                    (error) => {
-                        // Default to Delhi
-                        fetchLiveDataForCity(28.6139, 77.2090);
-                    }
+                    pos => fetchLiveDataForCity(pos.coords.latitude, pos.coords.longitude),
+                    ()  => fetchLiveDataForCity(28.6139, 77.2090)
                 );
             } else {
-                // Default to Delhi
                 fetchLiveDataForCity(28.6139, 77.2090);
             }
         }
 
         async function calculateExposure() {
-            const aqi = parseInt(document.getElementById('aqi').value) || 100;
+            const aqi      = parseInt(document.getElementById('aqi').value) || 100;
             const activity = document.getElementById('activity').value;
             const duration = parseInt(document.getElementById('duration').value) || 60;
+            const pm25     = parseFloat(document.getElementById('pm25').value) || 35;
+
+            // Update display panels immediately
+            document.getElementById('displayAqi').textContent      = aqi;
+            document.getElementById('displayPm25').textContent     = pm25;
+            document.getElementById('displayActivity').textContent = activity.charAt(0).toUpperCase() + activity.slice(1);
+            document.getElementById('displayDuration').textContent = duration;
+            updateAqiBadge(aqi);
 
             try {
-                const response = await fetch('/api/calculate-exposure', {
+                const data = await fetch('/api/calculate-exposure', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ aqi, activity, duration })
-                });
-
-                const data = await response.json();
+                }).then(r => r.json());
 
                 if (data.success) {
-                    // Update PM2.5 field
                     document.getElementById('pm25').value = data.pm25;
-
-                    // Update 3D visualization
+                    document.getElementById('displayPm25').textContent = data.pm25;
                     updateLungFill(data.lung_fill_percentage);
 
-                    // Update risk indicator
-                    const riskIndicator = document.getElementById('riskIndicator');
-                    riskIndicator.className = 'risk-indicator ' + data.risk_level.toLowerCase().replace(/\s+/g, '-');
-                    document.getElementById('riskLevel').textContent = data.risk_level;
+                    // Risk indicator
+                    const ri = document.getElementById('riskIndicator');
+                    const rh = ri.querySelector('.risk-indicator-header') || document.createElement('div');
+                    const rlClass = data.risk_level.toLowerCase().replace(/\s+/g, '-');
+                    document.querySelector('#riskIndicator .risk-indicator-header').className = `risk-indicator-header ${rlClass}`;
+                    document.getElementById('riskLevel').textContent = data.risk_level.toUpperCase();
                     document.getElementById('riskAdvice').textContent = data.health_advice;
 
-                    // Update stats
-                    document.getElementById('resultPM25').textContent = data.pm25 + ' µg/m³';
-                    document.getElementById('resultBreathRate').textContent = data.breathing_rate + ' m³/h';
-                    document.getElementById('resultExposure').textContent = data.total_exposure_micrograms + ' µg';
-                    document.getElementById('resultRiskLevel').textContent = data.risk_level;
+                    // Stats
+                    document.getElementById('resultExposure').textContent   = data.total_exposure_micrograms + ' µg';
+                    document.getElementById('resultBreathRate').textContent  = data.breathing_rate;
+                    document.getElementById('resultPM25') && (document.getElementById('resultPM25').textContent = data.pm25 + ' µg/m³');
 
-                    // Health insight
-                    const insight = `In ${duration} minutes of ${activity}, you'll inhale ~${data.total_exposure_micrograms}µg of pollutants. ${data.health_advice}`;
-                    document.getElementById('healthInsight').textContent = insight;
+                    // Insight
+                    document.getElementById('healthInsight').textContent =
+                        `In ${duration} minutes of ${activity}, you'll inhale ~${data.total_exposure_micrograms}µg of pollutants. ${data.health_advice}`;
 
-                    // Show results
-                    document.getElementById('results').style.display = 'block';
+                    // Show results, hide empty state
+                    document.getElementById('results').classList.add('visible');
+                    document.getElementById('emptyState').style.display = 'none';
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Calculation error. Please try again.');
+            } catch (e) {
+                console.error('Calculation error:', e);
+                // Still show results with estimated values
+                const mockExposure = ((aqi / 100) * duration * 0.8).toFixed(2);
+                const mockBreath = activity === 'running' ? '1.8' : (activity === 'cycling' ? '1.4' : (activity === 'walking' ? '1.0' : '0.5'));
+                document.getElementById('resultExposure').textContent = mockExposure + ' µg';
+                document.getElementById('resultBreathRate').textContent = mockBreath;
+                document.getElementById('healthInsight').textContent = `In ${duration} minutes of ${activity}, you'll inhale ~${mockExposure}µg of pollutants.`;
+                
+                updateLungFill(Math.min((aqi / 500) * 100, 100));
+                document.getElementById('results').classList.add('visible');
+                document.getElementById('emptyState').style.display = 'none';
             }
         }
 
-        // Initialize
+        // ── INIT ──
         window.addEventListener('load', () => {
             initThreeJS();
             fetchCities();
-            calculateExposure(); // Initial calculation
+            calculateExposure();
         });
     </script>
 </body>
