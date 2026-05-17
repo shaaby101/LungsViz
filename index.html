@@ -1050,25 +1050,27 @@
             });
 
             // 2. The Right Lung (Slightly larger)
-            // We start with a standard "globe" (SphereGeometry)
             const rightGeo = new THREE.SphereGeometry(1, 32, 32);
             const rightLung = new THREE.Mesh(rightGeo, lungMaterial.clone());
-            rightLung.position.set(1.1, 0, 0);
-            // Stretch it vertically, compress it slightly on the X axis
+            // Move closer to center, tilt inward to form a natural lung shape
+            rightLung.position.set(0.75, 0, 0);
+            rightLung.rotation.z = 0.15; 
             rightLung.scale.set(0.8, 1.6, 0.9); 
 
             // 3. The Left Lung (Slightly smaller to accommodate the heart)
             const leftGeo = new THREE.SphereGeometry(1, 32, 32);
             const leftLung = new THREE.Mesh(leftGeo, lungMaterial.clone());
-            leftLung.position.set(-1.1, 0, 0);
-            // Make the scale slightly smaller than the right lung
+            // Move closer, angle inward, scale down for cardiac notch
+            leftLung.position.set(-0.8, 0, 0);
+            leftLung.rotation.z = -0.15;
             leftLung.scale.set(0.7, 1.5, 0.85); 
 
             // 4. The Trachea (Windpipe)
-            const tracheaGeo = new THREE.CylinderGeometry(0.25, 0.25, 1.5, 16);
+            const tracheaGeo = new THREE.CylinderGeometry(0.2, 0.2, 1.5, 16);
             const tracheaMat = new THREE.MeshPhongMaterial({ color: 0xcccccc });
             const trachea = new THREE.Mesh(tracheaGeo, tracheaMat);
-            trachea.position.set(0, 1.8, 0);
+            // Lower the trachea so it connects with the lungs
+            trachea.position.set(0, 1.2, 0);
 
             // 5. Group them together
             lungsModel.add(leftLung, rightLung, trachea);
